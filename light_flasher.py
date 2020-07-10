@@ -70,23 +70,26 @@ def import_data_from_browser():
     start_time = datetime.datetime.now()
     while True:
         proc.poll()
-        if proc.returncode is not None:
-            time.sleep(0.2)
+        if proc.returncode is None:
+            elapsed = (datetime.datetime.now() - start_time).total_seconds()
+            LOGGER.info("Process running for %0.2fs" % elapsed)
+            time.sleep(5.0)
             if (datetime.datetime.now() - start_time).total_seconds() > 120:
                 proc.kill()
                 raise Exception("Killed process after %s seconds" % (datetime.datetime.now() - start_time).total_seconds())
         else:
+            LOGGER.info("Proc finished with %s, pulling stdout/stderr" % proc.returncode)
             stdout, stderr = proc.communicate()
             stdout = stdout.decode('utf-8')
             stderr = stderr.decode('utf-8')
             
             if proc.returncode != 0:
-                LOGGER.info("Error shelling out to node!")
-                LOGGER.info("Stdout:")
-                LOGGER.info(stdout)
-                LOGGER.info("Stderr:")
-                LOGGER.info(stderr)
-                sys.exit(1)
+                LOGGER.error("Error shelling out to node!")
+                LOGGER.error("Stdout:")
+                LOGGER.error(stdout)
+                LOGGER.error("Stderr:")
+                LOGGER.error(stderr)
+                raise Exception("Error shelling out to node!")
             
             try:
                 json_data = json.loads(stdout)
@@ -213,4 +216,3 @@ if __name__ == '__main__':
 
 # finally:
 #     pin_unexport(18)
-
